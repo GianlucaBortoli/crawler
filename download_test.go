@@ -46,3 +46,9 @@ func TestDownload_wrongContentType(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, got)
 }
+
+func TestDownload_wrongURL(t *testing.T) {
+	got, err := Download("asd")
+	assert.Error(t, err)
+	assert.Nil(t, got)
+}
