@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 func Download(URL string) ([]byte, error) {
@@ -18,7 +19,7 @@ func Download(URL string) ([]byte, error) {
 	}
 
 	contentType := resp.Header.Get("Content-Type")
-	if contentType != "text/html; charset=utf-8" {
+	if strings.ToLower(contentType) != "text/html; charset=utf-8" {
 		return nil, fmt.Errorf("wrong content type %s", contentType)
 	}
 
