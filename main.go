@@ -12,7 +12,7 @@ func help() {
 crawler <url>
 
 Example:
-crawler https://monzo.com`)
+crawler https://google.com`)
 	os.Exit(1)
 }
 
