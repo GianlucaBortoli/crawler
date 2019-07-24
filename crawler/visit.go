@@ -9,6 +9,10 @@ type edge struct {
 	to   string
 }
 
+func (e edge) Print() {
+	fmt.Printf("%s -> %s\n", e.from, e.to)
+}
+
 func Visit(from string) []edge {
 	var edges []edge
 	visited := make(map[string]bool)
