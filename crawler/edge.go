@@ -10,7 +10,13 @@ type edge struct {
 	to   string
 }
 
-func PrintEdge(e edge, w io.Writer) {
+func PrintSiteMap(edges []edge, w io.Writer) {
+	for _, e := range edges {
+		printEdge(e, w)
+	}
+}
+
+func printEdge(e edge, w io.Writer) {
 	if e.from == "" || e.to == "" {
 		fmt.Println("ERROR: malformed edge")
 		return
