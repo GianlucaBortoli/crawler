@@ -4,11 +4,6 @@ import (
 	"fmt"
 )
 
-type edge struct {
-	from string
-	to   string
-}
-
 func Visit(from string) []edge {
 	var edges []edge
 	visited := make(map[string]bool)
@@ -19,6 +14,7 @@ func Visit(from string) []edge {
 	for !queue.IsEmpty() {
 		l := queue.Pop()
 		if visited[l] {
+			// Avoid infinite loops in the pages' graph
 			continue
 		}
 
