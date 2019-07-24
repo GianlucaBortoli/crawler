@@ -25,7 +25,5 @@ func main() {
 
 	link := args[1]
 	edges := crawler.Visit(link)
-	for _, e := range edges {
-		crawler.PrintEdge(e, os.Stdout)
-	}
+	crawler.PrintSiteMap(edges, os.Stdout)
 }
