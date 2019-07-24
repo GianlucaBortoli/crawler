@@ -54,8 +54,11 @@ func isSameSubDomain(a, b string) bool {
 	if bErr != nil {
 		return false
 	}
-
-	aDomain := strings.TrimPrefix(aParsed.Host, "www.")
-	bDomain := strings.TrimPrefix(bParsed.Host, "www.")
+	// Host fields can start with "www.". They don't make any difference in the sub-domain
+	// so trim the prefix.
+	// The Hostname() function already takes care of stripping the port
+	// from the host. I want https://asd:80 and https://asd:443 to be in the same sub-domain
+	aDomain := strings.TrimPrefix(aParsed.Hostname(), "www.")
+	bDomain := strings.TrimPrefix(bParsed.Hostname(), "www.")
 	return aDomain == bDomain
 }

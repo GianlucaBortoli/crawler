@@ -72,6 +72,11 @@ func TestIsSameSubDomain(t *testing.T) {
 			"http://asd.com",
 			false,
 		},
+		{
+			"http://asd.com:443",
+			"http://asd.com:80",
+			true,
+		},
 	}
 
 	for _, tt := range testCases {
