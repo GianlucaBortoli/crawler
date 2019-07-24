@@ -26,7 +26,7 @@ func FindLinks(URL string, page []byte) ([]string, error) {
 		link, _ := linkTag.Attr("href")
 		link, err = getAbsURL(URL, link)
 		if err != nil {
-			fmt.Println("ERROR:", err)
+			fmt.Println("[ERROR] ", err)
 		}
 		links = append(links, link)
 	})
