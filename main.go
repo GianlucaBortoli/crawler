@@ -12,7 +12,7 @@ func help() {
 crawler <url>
 
 Example:
-crawler https://monzo.com`)
+crawler https://google.com`)
 	os.Exit(1)
 }
 
@@ -24,6 +24,11 @@ func main() {
 	}
 
 	link := args[1]
-	edges := crawler.Visit(link)
-	crawler.PrintSiteMap(edges, os.Stdout)
+
+	cr, edges := crawler.New(link)
+	cr.Start()
+
+	for e := range edges {
+		crawler.PrintEdge(e, os.Stdout)
+	}
 }

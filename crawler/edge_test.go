@@ -13,7 +13,7 @@ func TestPrintEdge(t *testing.T) {
 	var b strings.Builder
 	out := io.Writer(&b)
 
-	printEdge(e, out)
+	PrintEdge(e, out)
 	assert.Equal(t, "a -> b\n", b.String())
 }
 
@@ -22,7 +22,7 @@ func TestPrintEdge_noFrom(t *testing.T) {
 	var b strings.Builder
 	out := io.Writer(&b)
 
-	printEdge(e, out)
+	PrintEdge(e, out)
 	assert.Empty(t, b.String())
 }
 
@@ -31,7 +31,7 @@ func TestPrintEdge_noTo(t *testing.T) {
 	var b strings.Builder
 	out := io.Writer(&b)
 
-	printEdge(e, out)
+	PrintEdge(e, out)
 	assert.Empty(t, b.String())
 }
 
