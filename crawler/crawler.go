@@ -2,7 +2,9 @@ package crawler
 
 import (
 	"fmt"
+	"log"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -11,16 +13,17 @@ import (
 // Crawler implements the web crawler with many workers that can
 // visit websites
 type Crawler struct {
-	workers   int
-	maxDepth  int
+	workers  int
+	maxDepth int
+	log      *log.Logger
+
 	visited   sync.Map    // stores URLs which are already visited (URL -> bool)
 	URLChan   chan string // input
 	edgesChan chan edge   // output
 	quitChan  chan struct{}
 	wg        sync.WaitGroup
 	startOnce sync.Once
-
-	iter int32
+	iter      int32
 }
 
 // New creates a crawler that starts visiting websites the given URL with
@@ -36,6 +39,7 @@ func New(URL string, workers, maxDepth int) (*Crawler, <-chan edge) {
 	return &Crawler{
 		workers:   workers,
 		maxDepth:  maxDepth,
+		log:       log.New(os.Stderr, "", log.LstdFlags),
 		URLChan:   URLChan,
 		edgesChan: edgesChan,
 		quitChan:  make(chan struct{}, workers),
@@ -76,19 +80,19 @@ func (c *Crawler) start() {
 		select {
 		case from := <-c.URLChan:
 			if c.isMaxDepth() {
-				fmt.Printf("[WARN] Max iterations %d reached\n", c.iter)
+				c.log.Printf("[WARN] Max iterations %d reached\n", c.iter)
 				return
 			}
 			// Skip URLs that have already been visited before. We want to avoid possible
 			// infinite loops in the graph
 			if c.isAlreadyVisited(from) {
-				fmt.Printf("[INFO] link %s already visited\n", from)
+				c.log.Printf("[INFO] link %s already visited\n", from)
 				continue
 			}
 
 			to, err := visitURL(from)
 			if err != nil {
-				fmt.Println("[ERROR]", err)
+				c.log.Println("[ERROR]", err)
 			}
 			c.setVisited(from)
 			c.enqueueChildren(from, to)
@@ -119,7 +123,7 @@ func (c *Crawler) enqueueChildren(from string, to []string) {
 	for _, t := range to {
 		// Don't follow links in a different sub-domain
 		if !isSameSubDomain(from, t) {
-			fmt.Printf("[INFO] %s not in the subdomain of %s. Skipping\n", t, from)
+			c.log.Printf("[INFO] %s not in the subdomain of %s. Skipping\n", t, from)
 			continue
 		}
 		// Enqueue new node
