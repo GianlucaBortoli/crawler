@@ -5,32 +5,37 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 // Crawler implements the web crawler with many workers that can
 // visit websites
 type Crawler struct {
 	workers   int
+	maxDepth  int
 	visited   sync.Map    // stores URLs which are already visited (URL -> bool)
 	URLChan   chan string // input
 	edgesChan chan edge   // output
 	quitChan  chan struct{}
 	wg        sync.WaitGroup
 	startOnce sync.Once
+
+	iter int32
 }
 
 // New creates a crawler that starts visiting websites the given URL with
 // a given amount of workers.
 // Returns the crawler and a channel where edges are sent as the web pages
 // are visited
-func New(URL string, workers int) (*Crawler, <-chan edge) {
-	edgesChan := make(chan edge, 1000)
-	URLChan := make(chan string, 1000)
+func New(URL string, workers, maxDepth int) (*Crawler, <-chan edge) {
+	edgesChan := make(chan edge, 10000)
+	URLChan := make(chan string, 10000)
 	// Enqueue starting URL
 	URLChan <- URL
 
 	return &Crawler{
 		workers:   workers,
+		maxDepth:  maxDepth,
 		URLChan:   URLChan,
 		edgesChan: edgesChan,
 		quitChan:  make(chan struct{}, workers),
@@ -65,9 +70,15 @@ func (c *Crawler) Wait() {
 // start starts the URL visit process in a breadth-first manner.
 // The URLChan acts like a queue for pushing/popping nodes during the visit.
 func (c *Crawler) start() {
+	defer c.wg.Done()
+
 	for {
 		select {
 		case from := <-c.URLChan:
+			if c.isMaxDepth() {
+				fmt.Printf("[WARN] Max iterations %d reached\n", c.iter)
+				return
+			}
 			// Skip URLs that have already been visited before. We want to avoid possible
 			// infinite loops in the graph
 			if c.isAlreadyVisited(from) {
@@ -76,19 +87,23 @@ func (c *Crawler) start() {
 			}
 
 			to, err := visitURL(from)
-			c.setVisited(from)
 			if err != nil {
 				fmt.Println("[ERROR]", err)
 			}
+			c.setVisited(from)
 			c.enqueueChildren(from, to)
+
+			atomic.AddInt32(&c.iter, 1)
 		case <-c.quitChan:
-			c.wg.Done()
 			return
 		default:
-			c.wg.Done()
 			return
 		}
 	}
+}
+
+func (c *Crawler) isMaxDepth() bool {
+	return atomic.LoadInt32(&c.iter) >= int32(c.maxDepth)
 }
 
 func (c *Crawler) setVisited(URL string) {

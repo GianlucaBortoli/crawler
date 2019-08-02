@@ -10,6 +10,7 @@ import (
 func main() {
 	URL := flag.String("url", "", "The URL to start crawling from")
 	workers := flag.Int("workers", 5, "The number of workers to visit URLs")
+	depth := flag.Int("maxdepth", 10, "The maximum depth of the visit")
 	flag.Parse()
 
 	if *URL == "" {
@@ -17,7 +18,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cr, edges := crawler.New(*URL, *workers)
+	cr, edges := crawler.New(*URL, *workers, *depth)
 	cr.Start()
 	cr.Wait()
 	crawler.PrintSiteMap(edges, os.Stdout)
