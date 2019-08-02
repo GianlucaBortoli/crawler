@@ -4,11 +4,11 @@ build:
 
 .PHONY: test
 test:
-	go test -race -v ./...
+	go test -race -coverprofile c.out ./...
 
 .PHONY: clean
 clean:
-	rm -rf ./bin
+	rm -rf ./bin ./c.out
 
 .PHONY: lint
 lint:
