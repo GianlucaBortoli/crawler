@@ -10,9 +10,15 @@ type edge struct {
 	to   string
 }
 
-func PrintSiteMap(edges []edge, w io.Writer) {
-	for _, e := range edges {
-		printEdge(e, w)
+// PrintSiteMap prints all the edges from the channel to a generic io.Writer
+func PrintSiteMap(edgesChan <-chan edge, w io.Writer) {
+	for {
+		select {
+		case e := <-edgesChan:
+			printEdge(e, w)
+		default:
+			return
+		}
 	}
 }
 
@@ -22,7 +28,7 @@ func printEdge(e edge, w io.Writer) {
 		return
 	}
 
-	s := fmt.Sprintf("%s -> %s\n", e.from, e.to)
+	s := fmt.Sprintf("%s, %s\n", e.from, e.to)
 	if _, err := io.WriteString(w, s); err != nil {
 		fmt.Println("ERROR: unable to write edge")
 	}

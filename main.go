@@ -1,29 +1,24 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"os"
 
 	"github.com/cog-qlik/crawler/crawler"
 )
 
-func help() {
-	fmt.Println(`Usage:
-crawler <url>
-
-Example:
-crawler https://google.com`)
-	os.Exit(1)
-}
-
 func main() {
-	args := os.Args
-	if len(args) != 2 {
-		fmt.Println("Wrong number of arguments")
-		help()
+	URL := flag.String("url", "", "The URL to start crawling from")
+	workers := flag.Int("workers", 5, "The number of workers to visit URLs")
+	flag.Parse()
+
+	if *URL == "" {
+		flag.Usage()
+		os.Exit(1)
 	}
 
-	link := args[1]
-	edges := crawler.Visit(link)
+	cr, edges := crawler.New(*URL, *workers)
+	cr.Start()
+	cr.Wait()
 	crawler.PrintSiteMap(edges, os.Stdout)
 }
