@@ -70,11 +70,13 @@ func (c *Crawler) start() {
 		case from := <-c.URLChan:
 			// Skip URLs that have already been visited before. We want to avoid possible
 			// infinite loops in the graph
-			if _, ok := c.visited.Load(from); ok {
+			if c.isAlreadyVisited(from) {
 				fmt.Printf("[INFO] link %s already visited\n", from)
 				continue
 			}
+
 			to, err := visitURL(from)
+			c.setVisited(from)
 			if err != nil {
 				fmt.Println("[ERROR]", err)
 			}
@@ -89,6 +91,15 @@ func (c *Crawler) start() {
 	}
 }
 
+func (c *Crawler) setVisited(URL string) {
+	c.visited.Store(URL, true)
+}
+
+func (c *Crawler) isAlreadyVisited(URL string) bool {
+	_, ok := c.visited.Load(URL)
+	return ok
+}
+
 func (c *Crawler) enqueueChildren(from string, to []string) {
 	for _, t := range to {
 		// Don't follow links in a different sub-domain
@@ -96,10 +107,10 @@ func (c *Crawler) enqueueChildren(from string, to []string) {
 			fmt.Printf("[INFO] %s not in the subdomain of %s. Skipping\n", t, from)
 			continue
 		}
-
-		c.URLChan <- t // enqueue new node
-		c.visited.Store(t, true)
-		c.edgesChan <- edge{from: from, to: t} // send edges as I find them
+		// Enqueue new node
+		c.URLChan <- t
+		// Send edges as I visit them
+		c.edgesChan <- edge{from: from, to: t}
 	}
 }
 

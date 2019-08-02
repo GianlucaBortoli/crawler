@@ -147,3 +147,25 @@ func TestIsSameSubDomain(t *testing.T) {
 		assert.Equal(t, tt.sameSubDomain, res)
 	}
 }
+
+func TestIsAlreadyVisited(t *testing.T) {
+	c, _ := New("asd", 5)
+
+	got := c.isAlreadyVisited("asd")
+	assert.False(t, got)
+
+	c.visited.Store("asd", true)
+	got = c.isAlreadyVisited("asd")
+	assert.True(t, got)
+}
+
+func TestSetVisited(t *testing.T) {
+	c, _ := New("asd", 5)
+
+	_, visited := c.visited.Load("asd")
+	assert.False(t, visited)
+
+	c.setVisited("asd")
+	_, visited = c.visited.Load("asd")
+	assert.True(t, visited)
+}
