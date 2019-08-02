@@ -2,35 +2,41 @@ package crawler
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 	"sync"
 )
 
 type Crawler struct {
+	workers   int
 	visited   sync.Map
 	URLChan   chan string // input
 	edgesChan chan edge   // output
-	quitChan  chan struct{}
+	wg        sync.WaitGroup
 }
 
-func New(URL string) (*Crawler, <-chan edge) {
-	edgesChan := make(chan edge)
+func New(URL string, workers int) (*Crawler, <-chan edge) {
+	edgesChan := make(chan edge, 1000)
 	URLChan := make(chan string, 1000)
+	// Enqueue starting URL
 	URLChan <- URL
 
 	return &Crawler{
+		workers:   workers,
 		URLChan:   URLChan,
 		edgesChan: edgesChan,
-		quitChan:  make(chan struct{}),
 	}, edgesChan
 }
 
 func (c *Crawler) Start() {
-	go c.start()
+	for i := 0; i < c.workers; i++ {
+		c.wg.Add(1)
+		go c.start()
+	}
 }
 
-func (c *Crawler) Stop() {
-	c.quitChan <- struct{}{}
-	close(c.edgesChan)
+func (c *Crawler) Wait() {
+	c.wg.Wait()
 }
 
 func (c *Crawler) start() {
@@ -42,19 +48,16 @@ func (c *Crawler) start() {
 				fmt.Printf("[INFO] link %s already visited\n", from)
 				continue
 			}
-			to := visitSinglePage(from)
-			c.sendEdges(from, to)
-		case <-c.quitChan:
-			fmt.Println("[INFO] quit signal received")
-			break
+			to := visitURL(from)
+			c.enqueueChildren(from, to)
 		default:
-			//fmt.Println("[INFO] nothing in channels")
-			break
+			c.wg.Done()
+			return
 		}
 	}
 }
 
-func (c *Crawler) sendEdges(from string, to []string) {
+func (c *Crawler) enqueueChildren(from string, to []string) {
 	for _, t := range to {
 		if !isSameSubDomain(from, t) {
 			// Avoid scraping links not in the sub-domain of the initial URL
@@ -68,7 +71,7 @@ func (c *Crawler) sendEdges(from string, to []string) {
 	}
 }
 
-func visitSinglePage(URL string) []string {
+func visitURL(URL string) []string {
 	body, downloadErr := Download(URL)
 	if downloadErr != nil {
 		fmt.Println("[ERROR]", downloadErr)
@@ -78,4 +81,22 @@ func visitSinglePage(URL string) []string {
 		fmt.Println("[ERROR]", findErr)
 	}
 	return to
+}
+
+func isSameSubDomain(a, b string) bool {
+	aParsed, aErr := url.Parse(a)
+	if aErr != nil {
+		return false
+	}
+	bParsed, bErr := url.Parse(b)
+	if bErr != nil {
+		return false
+	}
+	// Host fields can start with "www.". They don't make any difference in the sub-domain
+	// so trim the prefix.
+	// The Hostname() function already takes care of stripping the port
+	// from the host. I want https://asd:80 and https://asd:443 to be in the same sub-domain
+	aDomain := strings.TrimPrefix(aParsed.Hostname(), "www.")
+	bDomain := strings.TrimPrefix(bParsed.Hostname(), "www.")
+	return aDomain == bDomain
 }

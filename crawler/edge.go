@@ -10,19 +10,24 @@ type edge struct {
 	to   string
 }
 
-func PrintSiteMap(edges []edge, w io.Writer) {
-	for _, e := range edges {
-		PrintEdge(e, w)
+func PrintSiteMap(edgesChan <-chan edge, w io.Writer) {
+	for {
+		select {
+		case e := <-edgesChan:
+			printEdge(e, w)
+		default:
+			return
+		}
 	}
 }
 
-func PrintEdge(e edge, w io.Writer) {
+func printEdge(e edge, w io.Writer) {
 	if e.from == "" || e.to == "" {
 		fmt.Println("ERROR: malformed edge")
 		return
 	}
 
-	s := fmt.Sprintf("%s -> %s\n", e.from, e.to)
+	s := fmt.Sprintf("%s, %s\n", e.from, e.to)
 	if _, err := io.WriteString(w, s); err != nil {
 		fmt.Println("ERROR: unable to write edge")
 	}
