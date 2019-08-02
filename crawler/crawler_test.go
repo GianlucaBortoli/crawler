@@ -1,26 +1,32 @@
 package crawler
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
+func getTestCrawler() *Crawler {
+	c, _ := New("https://google.com", 5, 2)
+	return c
+}
+
 func TestNew(t *testing.T) {
-	c, e := New("asd", 100000)
+	c, e := New("asd", 5, 100)
 	assert.NotNil(t, c)
 	assert.IsType(t, &Crawler{}, c)
 	assert.NotNil(t, e)
 }
 
 func TestCrawler_Start(t *testing.T) {
-	c, _ := New("https://google.com", 5)
+	c := getTestCrawler()
 	c.Start()
 	c.Wait()
 }
 
 func TestCrawler_StartManyTimes(t *testing.T) {
-	c, _ := New("https://google.com", 5)
+	c := getTestCrawler()
 	c.Start()
 	c.Start()
 	c.Start()
@@ -28,9 +34,10 @@ func TestCrawler_StartManyTimes(t *testing.T) {
 }
 
 func TestCrawler_StartWaitStop(t *testing.T) {
-	c, _ := New("https://google.com", 5)
-
+	c, e := New("https://google.com", 5, 1)
 	c.Start()
+	c.Wait()
+	PrintSiteMap(e, os.Stdout)
 	c.stop()
 }
 
@@ -149,7 +156,7 @@ func TestIsSameSubDomain(t *testing.T) {
 }
 
 func TestIsAlreadyVisited(t *testing.T) {
-	c, _ := New("asd", 5)
+	c := getTestCrawler()
 
 	got := c.isAlreadyVisited("asd")
 	assert.False(t, got)
@@ -160,7 +167,7 @@ func TestIsAlreadyVisited(t *testing.T) {
 }
 
 func TestSetVisited(t *testing.T) {
-	c, _ := New("asd", 5)
+	c := getTestCrawler()
 
 	_, visited := c.visited.Load("asd")
 	assert.False(t, visited)
