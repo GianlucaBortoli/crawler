@@ -7,14 +7,22 @@ import (
 	"sync"
 )
 
+// Crawler implements the web crawler with many workers that can
+// visit websites
 type Crawler struct {
 	workers   int
-	visited   sync.Map
+	visited   sync.Map    // stores URLs which are already visited (URL -> bool)
 	URLChan   chan string // input
 	edgesChan chan edge   // output
+	quitChan  chan struct{}
 	wg        sync.WaitGroup
+	startOnce sync.Once
 }
 
+// New creates a crawler that starts visiting websites the given URL with
+// a given amount of workers.
+// Returns the crawler and a channel where edges are sent as the web pages
+// are visited
 func New(URL string, workers int) (*Crawler, <-chan edge) {
 	edgesChan := make(chan edge, 1000)
 	URLChan := make(chan string, 1000)
@@ -25,31 +33,55 @@ func New(URL string, workers int) (*Crawler, <-chan edge) {
 		workers:   workers,
 		URLChan:   URLChan,
 		edgesChan: edgesChan,
+		quitChan:  make(chan struct{}, workers),
 	}, edgesChan
 }
 
+// Start starts the crawling procedure
 func (c *Crawler) Start() {
+	// Ensure workers can be started only once to avoid leaking goroutines
+	c.startOnce.Do(func() {
+		for i := 0; i < c.workers; i++ {
+			c.wg.Add(1)
+			go c.start()
+		}
+	})
+}
+
+// stop gracefully stops every worker in the crawler.
+// This is used only in unit-test only for now.
+func (c *Crawler) stop() { //nolint:unused
 	for i := 0; i < c.workers; i++ {
-		c.wg.Add(1)
-		go c.start()
+		c.quitChan <- struct{}{}
 	}
 }
 
+// Wait waits until the crawling procedure ends. This can be useful for printing
+// the site map
 func (c *Crawler) Wait() {
 	c.wg.Wait()
 }
 
+// start starts the URL visit process in a breadth-first manner.
+// The URLChan acts like a queue for pushing/popping nodes during the visit.
 func (c *Crawler) start() {
 	for {
 		select {
 		case from := <-c.URLChan:
+			// Skip URLs that have already been visited before. We want to avoid possible
+			// infinite loops in the graph
 			if _, ok := c.visited.Load(from); ok {
-				// Avoid infinite loops in the pages' graph
 				fmt.Printf("[INFO] link %s already visited\n", from)
 				continue
 			}
-			to := visitURL(from)
+			to, err := visitURL(from)
+			if err != nil {
+				fmt.Println("[ERROR]", err)
+			}
 			c.enqueueChildren(from, to)
+		case <-c.quitChan:
+			c.wg.Done()
+			return
 		default:
 			c.wg.Done()
 			return
@@ -59,28 +91,28 @@ func (c *Crawler) start() {
 
 func (c *Crawler) enqueueChildren(from string, to []string) {
 	for _, t := range to {
+		// Don't follow links in a different sub-domain
 		if !isSameSubDomain(from, t) {
-			// Avoid scraping links not in the sub-domain of the initial URL
 			fmt.Printf("[INFO] %s not in the subdomain of %s. Skipping\n", t, from)
 			continue
 		}
 
-		c.URLChan <- t
+		c.URLChan <- t // enqueue new node
 		c.visited.Store(t, true)
-		c.edgesChan <- edge{from: from, to: t}
+		c.edgesChan <- edge{from: from, to: t} // send edges as I find them
 	}
 }
 
-func visitURL(URL string) []string {
+func visitURL(URL string) ([]string, error) {
 	body, downloadErr := Download(URL)
 	if downloadErr != nil {
-		fmt.Println("[ERROR]", downloadErr)
+		return nil, fmt.Errorf("unable to download %s: %v", URL, downloadErr)
 	}
 	to, findErr := FindLinks(URL, body)
 	if findErr != nil {
-		fmt.Println("[ERROR]", findErr)
+		return nil, fmt.Errorf("unable to find children links for %s: %v", URL, findErr)
 	}
-	return to
+	return to, nil
 }
 
 func isSameSubDomain(a, b string) bool {

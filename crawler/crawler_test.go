@@ -6,6 +6,74 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNew(t *testing.T) {
+	c, e := New("asd", 100000)
+	assert.NotNil(t, c)
+	assert.IsType(t, &Crawler{}, c)
+	assert.NotNil(t, e)
+}
+
+func TestCrawler_Start(t *testing.T) {
+	c, _ := New("https://google.com", 5)
+	c.Start()
+	c.Wait()
+}
+
+func TestCrawler_StartManyTimes(t *testing.T) {
+	c, _ := New("https://google.com", 5)
+	c.Start()
+	c.Start()
+	c.Start()
+	c.Wait()
+}
+
+func TestCrawler_StartWaitStop(t *testing.T) {
+	c, _ := New("https://google.com", 5)
+
+	c.Start()
+	c.stop()
+}
+
+func TestVisitURL(t *testing.T) {
+	testCases := []struct {
+		URL          string
+		shouldErr    bool
+		shouldResNil bool
+	}{
+		{
+			"https://google.com",
+			false,
+			false,
+		},
+		{
+			"https://cnn.com",
+			false,
+			false,
+		},
+		{
+			"https://asd.asd",
+			true,
+			true,
+		},
+		{
+			"asd",
+			true,
+			true,
+		},
+		{
+			"",
+			true,
+			true,
+		},
+	}
+
+	for _, tt := range testCases {
+		res, err := visitURL(tt.URL)
+		assert.Equal(t, tt.shouldErr, err != nil)
+		assert.Equal(t, tt.shouldResNil, res == nil)
+	}
+}
+
 func TestIsSameSubDomain(t *testing.T) {
 	testCases := []struct {
 		a             string

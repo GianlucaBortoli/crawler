@@ -10,6 +10,7 @@ type edge struct {
 	to   string
 }
 
+// PrintSiteMap prints all the edges from the channel to a generic io.Writer
 func PrintSiteMap(edgesChan <-chan edge, w io.Writer) {
 	for {
 		select {

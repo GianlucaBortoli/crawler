@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+// Download downloads a web page for the given URL using the GET method.
+// This function returns an error if either:
+//   * the returned status code is "200 OK"
+//   * the returned Content-Type is of the "text/html" family
 func Download(URL string) ([]byte, error) {
 	resp, err := http.Get(URL)
 	if err != nil {
