@@ -30,10 +30,9 @@ func FindLinks(URL string, page []byte) ([]string, error) {
 		linkTag := s
 		link, _ := linkTag.Attr("href")
 		link, err = getAbsURL(URL, link)
-		if err != nil {
-			fmt.Println("[ERROR] ", err)
+		if err == nil {
+			links = append(links, link)
 		}
-		links = append(links, link)
 	})
 	return links, nil
 }

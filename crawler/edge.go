@@ -24,7 +24,6 @@ func PrintSiteMap(edgesChan <-chan edge, w io.Writer) {
 
 func printEdge(e edge, w io.Writer) {
 	if e.from == "" || e.to == "" {
-		fmt.Println("ERROR: malformed edge")
 		return
 	}
 
