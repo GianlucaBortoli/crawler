@@ -138,6 +138,7 @@ func (c *Crawler) enqueueChildren(from string, to []string) {
 	}
 }
 
+// visitURL downloads the page and finds all the links inside
 func visitURL(URL string) ([]string, error) {
 	body, downloadErr := Download(URL)
 	if downloadErr != nil {
