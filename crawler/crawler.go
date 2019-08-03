@@ -17,6 +17,7 @@ type Crawler struct {
 	maxDepth int
 	log      *log.Logger
 
+	running   bool
 	visited   sync.Map    // stores URLs which are already visited (URL -> bool)
 	URLChan   chan string // input
 	edgesChan chan edge   // output
@@ -48,6 +49,7 @@ func New(URL string, workers, maxDepth int) (*Crawler, <-chan edge) {
 
 // Start starts the crawling procedure
 func (c *Crawler) Start() {
+	c.running = true
 	// Ensure workers can be started only once to avoid leaking goroutines
 	c.startOnce.Do(func() {
 		for i := 0; i < c.workers; i++ {
@@ -60,6 +62,9 @@ func (c *Crawler) Start() {
 // stop gracefully stops every worker in the crawler.
 // This is used only in unit-test only for now.
 func (c *Crawler) stop() { //nolint:unused
+	if !c.running {
+		return
+	}
 	for i := 0; i < c.workers; i++ {
 		c.quitChan <- struct{}{}
 	}
