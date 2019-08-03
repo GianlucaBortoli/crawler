@@ -10,7 +10,6 @@ import (
 
 // FindLinks parses the content of a web page and finds all links.
 // This function only selects URLs which are:
-//   * inside the <body> HTML tag
 //   * inside the <a> HTML tag
 //   * inside the "href" attribute
 func FindLinks(URL string, page []byte) ([]string, error) {
@@ -26,7 +25,7 @@ func FindLinks(URL string, page []byte) ([]string, error) {
 
 	var links []string
 	// Find all a tags within body
-	doc.Find("body a").Each(func(i int, s *goquery.Selection) {
+	doc.Find("a").Each(func(i int, s *goquery.Selection) {
 		linkTag := s
 		link, _ := linkTag.Attr("href")
 		link, err = getAbsURL(URL, link)
