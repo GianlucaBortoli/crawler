@@ -78,6 +78,7 @@ is faster than downloading one, so it would make sense to have more workers that
 than workers that parse them.
 * Every worker could reuse the same `http.Transport` (https://godoc.org/net/http#Transport) for the
 HTTP client. This allows to reuse HTTP connections and TCP sockets that have already been opened before,
-limiting also the number of TLS handshakes (which are quite expensive in terms of time). This can be
-of help especially when many of the URLs belong to the same sub-domain.
+limiting also the number of TLS handshakes (which are quite expensive in terms of time). This can help
+especially when a high number of workers is used, limiting the usage of file descriptors, and when many
+of the URLs belong to the same sub-domain.
 * Respect `robots.txt` advertised by web servers to respect site owners' wills.

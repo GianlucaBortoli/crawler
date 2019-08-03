@@ -22,8 +22,9 @@ type Crawler struct {
 	edgesChan chan edge   // output
 	quitChan  chan struct{}
 	wg        sync.WaitGroup
-	startOnce sync.Once
 	iter      int32
+	startOnce sync.Once
+	stopOnce  sync.Once //nolint:unused
 }
 
 // New creates a crawler that starts visiting websites the given URL with
@@ -60,13 +61,16 @@ func (c *Crawler) Start() {
 // stop gracefully stops every worker in the crawler.
 // This is used only in unit-test only for now.
 func (c *Crawler) stop() { //nolint:unused
-	for i := 0; i < c.workers; i++ {
-		c.quitChan <- struct{}{}
-	}
+	// Ensure workers are stopped only once to avoid sending too many signals in the quitChan
+	c.stopOnce.Do(func() {
+		for i := 0; i < c.workers; i++ {
+			c.quitChan <- struct{}{}
+		}
+	})
 }
 
 // Wait waits until the crawling procedure ends. This can be useful for printing
-// the site map
+// the site map when the visit is completed
 func (c *Crawler) Wait() {
 	c.wg.Wait()
 }
@@ -133,6 +137,7 @@ func (c *Crawler) enqueueChildren(from string, to []string) {
 	}
 }
 
+// visitURL downloads the page and finds all the links inside
 func visitURL(URL string) ([]string, error) {
 	body, downloadErr := Download(URL)
 	if downloadErr != nil {

@@ -33,6 +33,19 @@ func TestCrawler_StartManyTimes(t *testing.T) {
 	c.Wait()
 }
 
+func TestCrawler_Stop(t *testing.T) {
+	c := getTestCrawler()
+	c.stop()
+}
+
+func TestCrawler_StopManyTimes(t *testing.T) {
+	c := getTestCrawler()
+	c.stop()
+	c.stop()
+	c.stop()
+	c.stop()
+}
+
 func TestCrawler_StartWaitStop(t *testing.T) {
 	c, e := New("https://google.com", 5, 1)
 	c.Start()
@@ -150,8 +163,7 @@ func TestIsSameSubDomain(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		res := isSameSubDomain(tt.a, tt.b)
-		assert.Equal(t, tt.sameSubDomain, res)
+		assert.Equal(t, tt.sameSubDomain, isSameSubDomain(tt.a, tt.b))
 	}
 }
 
