@@ -24,7 +24,7 @@ type Crawler struct {
 	wg        sync.WaitGroup
 	iter      int32
 	startOnce sync.Once
-	stopOnce  sync.Once
+	stopOnce  sync.Once //nolint:unused
 }
 
 // New creates a crawler that starts visiting websites the given URL with

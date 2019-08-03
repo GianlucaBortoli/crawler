@@ -9,3 +9,7 @@ test:
 .PHONY: clean
 clean:
 	rm -rf ./bin ./c.out
+
+.PHONY: lint
+lint:
+	golangci-lint run --tests=false
